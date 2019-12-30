@@ -57,14 +57,25 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         cell.expenseTitle.text = expenseLabel
         return cell
     }
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            deleteFromCore(row: indexPath.row)
+            self.items.remove(at: indexPath.row)
+            self.tableView.reloadData()
+            
+        }
+    }
+    
+    func deleteFromCore(row: Int){
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
         let request = NSFetchRequest<NSManagedObject>(entityName: "Expense")
         
         do {
             let data = try context.fetch(request)
-            let deleteData = data[indexPath.row] as NSManagedObject
+            let deleteData = data[row] as NSManagedObject
             context.delete(deleteData)
             
             do {
@@ -75,7 +86,6 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         } catch  {
             print(error)
         }
-        
     }
 
 }
