@@ -106,7 +106,8 @@
                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="230" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="15" translatesAutoresizingMaskIntoConstraints="NO" id="9S8-wB-aAZ">
                                                     <rect key="frame" x="215" y="19" width="145" height="20"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="width" constant="145" id="h3Y-dP-Eyd"/>
+                                                        <constraint firstAttribute="width" constant="145" id="7bL-lI-kwV"/>
+                                                        <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="145" id="h3Y-dP-Eyd"/>
                                                     </constraints>
                                                     <fontDescription key="fontDescription" type="system" pointSize="26"/>
                                                     <nil key="textColor"/>

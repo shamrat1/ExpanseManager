@@ -11,7 +11,7 @@ import CoreData
 
 class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     @IBOutlet weak var tableView: UITableView!
-    
+    var debit = 0 , credit = 0
     @IBOutlet weak var infoLabel: UILabel!
     var items : [NSManagedObject] = []
     
@@ -31,8 +31,11 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         } catch {
             print("error: \(error)")
         }
-//        infoLabel.text = "Debit: \(debit) & Credit: \(credit)"
+        
+        self.calculation()
+        infoLabel.text = "Debit: \(debit) & Credit: \(credit - debit)"
         tableView.reloadData()
+        
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -44,17 +47,17 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         let item = items[indexPath.row]
         let expenseLabel = (item.value(forKey: "expenseTitle") as! String)
          let expenseAmount = item.value(forKey: "expenseAmount") as! String
-//        let expenseType = item.value(forKey: "expenseType") as! Bool
+        let expenseType = item.value(forKey: "expenseType") as! Bool
         
-//        if expenseType {
-//            credit += Double(expenseAmount)!
-////            cell.backgroundColor = .red
-//        }else {
-//            debit += Double(expenseAmount)!
-////            cell.backgroundColor = .green
-//        }
+        if expenseType {
+            cell.expenseAmountLabel.textColor = .green
+        }else {
+            cell.expenseAmountLabel.textColor = .red
+        }
         cell.expenseAmountLabel.text = expenseAmount
         cell.expenseTitle.text = expenseLabel
+        
+        
         return cell
     }
 
@@ -71,13 +74,27 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         let deleteButton = UIContextualAction(style: .destructive, title: "Delete") { (action, view, success) in
             
             self.deleteFromCore(row: indexPath.row)
-            
         }
         
         return UISwipeActionsConfiguration(actions: [editButton,deleteButton])
     }
+    func calculation(){
+        debit = 0
+        credit = 0
+        for item in items{
+            let type = item.value(forKey: "expenseType") as! Bool
+            let amount = item.value(forKey: "expenseAmount") as! String
+            
+            if type {
+                credit += Int(amount)!
+            }else {
+                debit += Int(amount)!
+            }
+        }
+    }
+    
     func settingAlertNTextField(row: Int){
-        print(items[row])
+//        print(items[row])
     
         let alert = UIAlertController(title: "Edit Records", message: "", preferredStyle: UIAlertController.Style.alert)
         
@@ -102,6 +119,8 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         present(alert, animated: true, completion: nil)
         
     }
+    
+    
     func editRecord(row: Int, value: [String]) {
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
@@ -125,6 +144,8 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         item.setValue(value[1], forKey: "expenseAmount")
         self.tableView.reloadData()
     }
+    
+    
     func deleteFromCore(row: Int){
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
