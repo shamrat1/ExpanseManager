@@ -11,10 +11,11 @@ import CoreData
 
 class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     @IBOutlet weak var tableView: UITableView!
-    var debit = 0 , credit = 0
+    var debit = 0 , credit = 0,debitCount = 0 , creditCount = 0
     @IBOutlet weak var infoLabel: UILabel!
-    var items : [NSManagedObject] = []
-    
+    var items = [[NSManagedObject]]()
+    var creditItems : [NSManagedObject] = []
+    var deditItems : [NSManagedObject] = []
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -26,8 +27,17 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         let request = NSFetchRequest<NSManagedObject>(entityName: "Expense")
         
         do {
-            try items = context.fetch(request)
-//            print(items)
+            let allitems = try context.fetch(request)
+            
+            for item in allitems{
+                if item.value(forKey: "expenseType") as! Bool{
+                    creditItems.append(item)
+                }else{
+                    deditItems.append(item)
+                }
+            }
+            items.append(creditItems)
+            items.append(self.deditItems)
         } catch {
             print("error: \(error)")
         }
@@ -37,26 +47,29 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         tableView.reloadData()
         
     }
-    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        let header = section == 0 ? "Credit" : "Debit"
+        return header
+    }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return items.count
+        
+        return items[section].count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ShowCell") as! ShowTableViewCell
-        let item = items[indexPath.row]
-        let expenseLabel = (item.value(forKey: "expenseTitle") as! String)
-         let expenseAmount = item.value(forKey: "expenseAmount") as! String
+        let item = items[indexPath.section][indexPath.row]
         let expenseType = item.value(forKey: "expenseType") as! Bool
+        let expenseLabel = (item.value(forKey: "expenseTitle") as! String)
+        let expenseAmount = item.value(forKey: "expenseAmount") as! String
         
-        if expenseType {
-            cell.expenseAmountLabel.textColor = .green
-        }else {
-            cell.expenseAmountLabel.textColor = .red
-        }
+        cell.expenseAmountLabel.textColor = (expenseType ? .green : .red)
+        
         cell.expenseAmountLabel.text = expenseAmount
         cell.expenseTitle.text = expenseLabel
-        
         
         return cell
     }
@@ -67,7 +80,7 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let editButton = UIContextualAction(style: .normal, title: "Edit") { (action, view, success) in
-            self.settingAlertNTextField(row: indexPath.row)
+            self.settingAlertNTextField(section: indexPath.section,row: indexPath.row)
             
         }
         
@@ -81,31 +94,35 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
     func calculation(){
         debit = 0
         credit = 0
-        for item in items{
-            let type = item.value(forKey: "expenseType") as! Bool
-            let amount = item.value(forKey: "expenseAmount") as! String
-            
-            if type {
-                credit += Int(amount)!
-            }else {
-                debit += Int(amount)!
+        for i in items{
+            for item in i{
+                let type = item.value(forKey: "expenseType") as! Bool
+                let amount = item.value(forKey: "expenseAmount") as! String
+                
+                if type {
+                    credit += Int(amount)!
+                    
+                }else {
+                    debit += Int(amount)!
+                    
+                }
             }
         }
     }
     
-    func settingAlertNTextField(row: Int){
+    func settingAlertNTextField(section: Int , row: Int){
 //        print(items[row])
     
         let alert = UIAlertController(title: "Edit Records", message: "", preferredStyle: UIAlertController.Style.alert)
         
         alert.addTextField { (UITextField) in
             let textField = UITextField
-            textField.text = self.items[row].value(forKey: "expenseTitle") as? String
+            textField.text = self.items[section][row].value(forKey: "expenseTitle") as? String
             
         }
         alert.addTextField { (UITextField) in
             let textField = UITextField
-            textField.text = self.items[row].value(forKey: "expenseAmount") as? String
+            textField.text = self.items[section][row].value(forKey: "expenseAmount") as? String
             
         }
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
@@ -114,14 +131,14 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
                 alert.textFields?[0].text!,
                 alert.textFields?[1].text!
             ]
-            self.editRecord(row: row,value: value as! [String])
+            self.editRecord(section:section,row: row,value: value as! [String])
         }))
         present(alert, animated: true, completion: nil)
         
     }
     
     
-    func editRecord(row: Int, value: [String]) {
+    func editRecord(section:Int,row: Int, value: [String]) {
         let delegate = UIApplication.shared.delegate as! AppDelegate
         let context = delegate.persistentContainer.viewContext
         let request = NSFetchRequest<NSManagedObject>(entityName: "Expense")
@@ -139,7 +156,7 @@ class ShowViewController: UIViewController, UITableViewDataSource, UITableViewDe
         } catch  {
             print(error)
         }
-        let item = self.items[row]
+        let item = self.items[section][row]
         item.setValue(value[0], forKey: "expenseTitle")
         item.setValue(value[1], forKey: "expenseAmount")
         self.tableView.reloadData()
